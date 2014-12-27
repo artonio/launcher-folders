@@ -41,7 +41,7 @@ class DrawerPreview(Gtk.Window):
 
 		screen = Gdk.Screen.get_default()
 		css_provider = Gtk.CssProvider()
-		css_provider.load_from_path('/home/nigel/development/DrawerPython/themed.css')
+		css_provider.load_from_path(CURR_WORK_DIR + '/themed.css')
 
 		context = Gtk.StyleContext()
 		context.add_provider_for_screen(screen, css_provider,

@@ -9,7 +9,8 @@ import subprocess
 import mimetypes, urllib
 import csv, pickle
 import util
-import magic #mimetype module
+from lib import magic
+# import magic #mimetype module
 
 (URI_LIST_MIME_TYPE, TEXT_LIST_MIME_TYPE) = range(2)
 (COLUMN_TEXT, COLUMN_PIXBUF) = range(2)
@@ -299,8 +300,8 @@ class MainWindow(Gtk.Window):
 			f.write("OnlyShowIn=Unity;\n")
 		f.write("[Desktop Action Edit Drawer]\n")
 		f.write("Name=Edit Drawer\n")
-		f.write("Exec=/home/nigel/development/DrawerPython/createDrawer.py " + drawerName + "\n")
-		f.write("Path=/home/nigel/development/DrawerPython/\n")
+		f.write("Exec=" + CURR_WORK_DIR + "/createDrawer.py " + drawerName + "\n")
+		f.write("Path=" + CURR_WORK_DIR + "/\n")
 		f.write("OnlyShowIn=Unity;\n")
 		f.close()
 		os.chmod(filename, 0755)
@@ -966,7 +967,7 @@ class ShortcutsView(Gtk.IconView):
 					else:
 						# For dropping only files and folders
 						# print uri
-						# gio_file = Gio.File.new_for_uri(uri)
+						gio_file = Gio.File.new_for_uri(uri)
 						# file_info = gio_file.query_info('standard::*', Gio.FileQueryInfoFlags.NONE, None)
 						# uri_icon = file_info.get_icon().get_names()[0]
 						#convert uri chars to ascii

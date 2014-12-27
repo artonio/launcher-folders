@@ -8,6 +8,7 @@ import util
 LOCAL_APP_DIR = os.getenv('HOME') + "/.local/share/applications/"
 CONFIG_DIR = os.getenv('HOME') + "/.appDrawerConfig/"
 APP_DIR = os.getenv('HOME') + "/development/DrawerPython/"
+CURR_WORK_DIR = os.getcwd()
 
 (COLUMN_TEXT, COLUMN_PIXBUF) = range(2)
 
@@ -56,7 +57,7 @@ class MainWindow(Gtk.Window):
 
 		screen = Gdk.Screen.get_default()
 		css_provider = Gtk.CssProvider()
-		css_provider.load_from_path('/home/nigel/development/DrawerPython/themed.css')
+		css_provider.load_from_path(CURR_WORK_DIR + '/themed.css')
 
 		context = Gtk.StyleContext()
 		context.add_provider_for_screen(screen, css_provider,
@@ -218,7 +219,7 @@ class AddNewItemAndReconfigure:
 		subprocess.call([APP_DIR + '/deleteAddIconLauncher.sh', str(self.configList['drawerName'])])
 
 	def writeLog(self, configList, configFileName, droppedItemFileName):
-		f = open("/home/nigel/development/DrawerPython/dropTest.txt", 'w')
+		f = open(CURR_WORK_DIR + "/dropTest.txt", 'w')
 		f.write("Config File Name: " + configFileName + "\n")
 		f.write("Dropped Item: " + droppedItemFileName + "\n")
 		f.close()
@@ -255,8 +256,8 @@ class AddNewItemAndReconfigure:
 			f.write("OnlyShowIn=Unity;\n")
 		f.write("[Desktop Action Edit Drawer]\n")
 		f.write("Name=Edit Drawer\n")
-		f.write("Exec=/home/nigel/development/DrawerPython/createDrawer.py " + drawerName + "\n")
-		f.write("Path=/home/nigel/development/DrawerPython/\n")
+		f.write("Exec=" + CURR_WORK_DIR + "/createDrawer.py " + drawerName + "\n")
+		f.write("Path=" + CURR_WORK_DIR + "/\n")
 		f.write("OnlyShowIn=Unity;\n")
 		f.close()
 		os.chmod(filename, 0755)
