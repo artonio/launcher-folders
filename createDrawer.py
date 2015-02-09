@@ -4,7 +4,7 @@ from gi.repository import Gtk, Gdk, GdkPixbuf, Pango, Gio
 from tabLabel import TabLabel
 from generateIcon import GenerateIcon
 from drawerPreview import DrawerPreview
-import os, sys, re
+import os, os.path, sys, re
 import subprocess
 import mimetypes, urllib
 import csv, pickle
@@ -555,32 +555,36 @@ class OpenDrawerDialog(Gtk.Dialog):
 				filename = filename.replace(".pickle", "")
 				model.append([pixbuf, filename])   	
 
+'''Pops up a dialog to choose a new drawer's name and icon
+'''
 class NewDrawerDialog(Gtk.Dialog):
 	def __init__(self, parent):
 		Gtk.Dialog.__init__(self, "New Drawer", parent, 0, 
 			(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK))
+		self.drawerIconFileName = None
 		box = self.get_content_area()
-
-		self.drawerIconFileName = ""
-
+		#self.drawerIconFileName = ""
+		#create text field and icon
+		self.drawerName = Gtk.Entry()
 		#dImage = "gtk-page-setup"
 		#dImage = "gtk-missing-image"
-		dImage = "gtk-select-color"
-
-		self.drawerName = Gtk.Entry()
-		self.drawerIcon = Gtk.Button.new_from_icon_name(dImage, 4)
+		#dImage = "gtk-select-color"
+		self.drawerIcon = Gtk.Button.new_from_icon_name("gtk-select-color", 4)
+		#set onClick behaviour
+		#TODO how does connect work? Cannot find in API
 		self.drawerIcon.connect("clicked", self.on_new_drawer_icon_click)
-
+		#arrange UI elements
 		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
 		hbox.pack_start(self.drawerName, False, True, 0)
 		hbox.pack_end(self.drawerIcon, True, True, 0)
-
 		box.add(hbox)
 		self.show_all()
 
 	def on_new_drawer_icon_click(self, widget):
+		#pop up a file navigator to choose icon file
 		dialog = DrawerIconChooserDialog(self)
 		response = dialog.run()
+		#check dialog response and set icon or cancel accordingly
 		if response == Gtk.ResponseType.OK:
 			self.drawerIconFileName = dialog.get_filename()
 			self.drawerIcon.set_image(Gtk.Image.new_from_pixbuf(self.getPixBuffFromFile(self.drawerIconFileName)))
@@ -590,6 +594,7 @@ class NewDrawerDialog(Gtk.Dialog):
 
 	def getPixBuffFromFile(self, fileName):
 		pixbuf = GdkPixbuf.Pixbuf.new_from_file(fileName)
+		#resize icon for ubuntu sidebar
 		pixbuf = pixbuf.scale_simple(48, 48, GdkPixbuf.InterpType.BILINEAR)
 		
 		return pixbuf
@@ -897,11 +902,10 @@ class ShortcutsView(Gtk.IconView):
 	def on_drag_data_received(self, widget, drag_context, x,y, data,info, time):
 		if info == URI_LIST_MIME_TYPE:
 			uris = data.get_uris()
-			#print data.get_text()
 			for uri in uris:
 				#TODO add more url matching like ftp:// etc
-				matchUrl = re.match(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', uri)
 				#Check if firefox URL was dropped
+				matchUrl = re.match(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', uri)
 				if matchUrl:
 					appName = uri
 					execPath = "firefox " + uri
@@ -914,8 +918,9 @@ class ShortcutsView(Gtk.IconView):
 						self.model.set_value(row, COLUMN_PIXBUF, self.getPixBuffFromFile(linkIcon, self.iconSize))
 						self.launchDict[appName] = execPath
 						self.drawerSettings['appList'].append([appName, linkIcon, execPath])
-
+				#application shortcut was dropped
 				else:
+					#trim "application://" prefix from uri
 					if "application://" in uri:
 						filename = uri.replace("application://", "")
 						if os.path.isfile(LOCAL_APP_DIR + filename):
@@ -925,24 +930,36 @@ class ShortcutsView(Gtk.IconView):
 
 					fileName, fileExtension = os.path.splitext(uri)
 					if fileExtension == ".desktop":
+						#print icon out into terminal
 						fileName = fileName.replace("file://", "")
 						fileName = util.checkForSpaceInFileAndReplace(fileName)
-
 						appName, appIcon, execPath = util.getAppInfo(fileName + fileExtension)
-						# print util.getAppInfo(fileName + fileExtension)
+						# if app is not already in drawer
+						if not (appName in self.launchDict):
+							# get icon path if it is not stored in working directory
+							if not os.path.isfile(appIcon):
+								appIcon = util.getIconPathFromFileName(appIcon)
+								print appIcon
+							#use png for icon if svg is too large
+							if os.path.getsize(appIcon) > 100000: #100kb
+								#start with 512X512 icons and scale down by 50% until the png is found. If no png is found default to svg.
+								size = 512
+								while size >= 64 and (os.path.splitext(appIcon)[1] == '.svg' or os.path.splitext(appIcon)[1] == '.SVG'):
+									resolution = str(size) + 'x' + str(size)
+									png_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(appIcon))), resolution, 'apps')
+									file_name = os.path.splitext(os.path.basename(appIcon))[0] + '.png'
+									full_path = os.path.join(png_dir, file_name)
+									#print full_path
+									if os.path.exists(full_path):
+										appIcon = full_path
+										print full_path
+									size /= 2
 
-						if appName in self.launchDict:
-							pass
-						else:
 							row = self.model.append()
 							self.model.set_value(row, COLUMN_TEXT, appName)
 							self.model.set_value(row, COLUMN_PIXBUF, self.getPixBuffFromFile(appIcon, self.iconSize))
 							self.launchDict[appName] = execPath
 
-							if os.path.isfile(appIcon):
-								pass
-							else:
-								appIcon = util.getIconPathFromFileName(appIcon)
 
 							self.drawerSettings['appList'].append([appName, appIcon, execPath])
 							print self.drawerSettings
