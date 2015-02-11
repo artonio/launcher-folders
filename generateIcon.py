@@ -22,7 +22,7 @@ class GenerateIcon:
 			os.remove(CONFIG_DIR + drawerName + ".png")
 
 		self.drawerName = drawerName
-		blankImage = Image.new("RGB", (ICON_WIDTH, ICON_HEIGHT))
+		blankImage = Image.new("RGBA", (ICON_WIDTH, ICON_HEIGHT))
 		mini_icons_list = []
 		tmp_png_icons = []
 

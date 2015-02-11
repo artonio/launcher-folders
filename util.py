@@ -109,7 +109,7 @@ def deleteDrawerFiles(localAppDir, configAppDir, selectedValue):
 
 def lookupIcon(iconName):
 	icon_theme = Gtk.IconTheme.get_default()
-	icon = icon_theme.lookup_icon(iconName, 64, 0)
+	icon = icon_theme.lookup_icon(iconName, 64, Gtk.IconLookupFlags.NO_SVG)
 	if icon:
 		return icon.get_filename()
 

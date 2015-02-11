@@ -274,6 +274,7 @@ class MainWindow(Gtk.Window):
 		f.write("[Desktop Entry]\n")
 		f.write("Name=" + drawerName + "\n")
 		f.write("Exec=" + CURR_WORK_DIR + "/drawer.py " + "\"" + CONFIG_DIR + drawerName + ".pickle\" %f" + "\n")
+		f.write("Path=" + CURR_WORK_DIR + "/\n")
 		f.write("MimeType=application/octet-stream\n")
 		f.write("Terminal=false\n")
 		f.write("Type=Application\n")
@@ -637,7 +638,6 @@ class ItemPropertiesDialog(Gtk.Dialog):
 
 		self.set_modal(True)
 		self.set_default_size(400, 400)
-
 		self.appNameEntry = Gtk.Entry()
 		self.appNameEntry.set_text(self.appSettings[0])
 
@@ -940,26 +940,11 @@ class ShortcutsView(Gtk.IconView):
 							if not os.path.isfile(appIcon):
 								appIcon = util.getIconPathFromFileName(appIcon)
 								print appIcon
-							#use png for icon if svg is too large
-							if os.path.getsize(appIcon) > 100000: #100kb
-								#start with 512X512 icons and scale down by 50% until the png is found. If no png is found default to svg.
-								size = 512
-								while size >= 64 and (os.path.splitext(appIcon)[1] == '.svg' or os.path.splitext(appIcon)[1] == '.SVG'):
-									resolution = str(size) + 'x' + str(size)
-									png_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(appIcon))), resolution, 'apps')
-									file_name = os.path.splitext(os.path.basename(appIcon))[0] + '.png'
-									full_path = os.path.join(png_dir, file_name)
-									#print full_path
-									if os.path.exists(full_path):
-										appIcon = full_path
-										print full_path
-									size /= 2
 
 							row = self.model.append()
 							self.model.set_value(row, COLUMN_TEXT, appName)
 							self.model.set_value(row, COLUMN_PIXBUF, self.getPixBuffFromFile(appIcon, self.iconSize))
 							self.launchDict[appName] = execPath
-
 
 							self.drawerSettings['appList'].append([appName, appIcon, execPath])
 							print self.drawerSettings
@@ -1036,7 +1021,12 @@ class ShortcutsView(Gtk.IconView):
 
 	def lookupIcon(self, iconName):
 		icon_theme = Gtk.IconTheme.get_default()
-		icon = icon_theme.lookup_icon(iconName, 64, 0)
+		#try to get png icon
+		icon = icon_theme.lookup_icon(iconName, 64, Gtk.IconLookupFlags.NO_SVG)
+		#settle for svg if png not available
+		#if not icon:
+			#icon = icon_theme.lookup_icon(iconName, 64, 0)
+		#if no icon available return None
 		if icon:
 			return icon.get_filename()
 
@@ -1045,6 +1035,7 @@ class ShortcutsView(Gtk.IconView):
 		if os.path.isfile(fileName):
 			newFileName = fileName	
 		else:
+			#seems that this somehow calls the 
 			newFileName = self.lookupIcon(fileName)
 
 		pixbuf = GdkPixbuf.Pixbuf.new_from_file(newFileName)
