@@ -11,29 +11,8 @@ class TabLabel(Gtk.Box):
 
         self.set_orientation(Gtk.Orientation.HORIZONTAL)
         self.set_spacing(5) # spacing: [icon|5px|label|5px|close]  
-      
-        # icon
-        if drawerIconFileName:
-            self.icon = Gtk.Image.new_from_pixbuf(self.getPixBuffFromFile(drawerIconFileName))
-        else:
-            self.icon = Gtk.Image.new_from_stock(Gtk.STOCK_FILE, Gtk.IconSize.MENU)
-            
-        self.pack_start(self.icon, False, False, 0)
-        
-        # label 
-        lbl_event_box = Gtk.EventBox.new()
-        self.label = Gtk.Label(label_text)
-        lbl_event_box.add(self.label)
-        lbl_event_box.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
-        lbl_event_box.connect("button-press-event", self.button_pressed)
-        self.pack_start(lbl_event_box, True, True, 0)
-        
-        # close button
-        button = Gtk.Button()
-        button.set_relief(Gtk.ReliefStyle.NONE)
-        button.set_focus_on_click(False)
-        button.add(Gtk.Image.new_from_stock(Gtk.STOCK_CLOSE, Gtk.IconSize.MENU))
-        button.connect("clicked", self.button_clicked)
+
+        # setup css provider for buttons
         data =  ".button {\n" \
                 "-GtkButton-default-border : 0px;\n" \
                 "-GtkButton-default-outside-border : 0px;\n" \
@@ -44,17 +23,50 @@ class TabLabel(Gtk.Box):
                 "}"
         provider = Gtk.CssProvider()
         provider.load_from_data(data)
+
+        # icon
+        if drawerIconFileName:
+            self.icon = Gtk.Image.new_from_pixbuf(self.getPixBuffFromFile(drawerIconFileName))
+        else:
+            self.icon = Gtk.Image.new_from_stock(Gtk.STOCK_FILE, Gtk.IconSize.MENU) 
+        icon_button = Gtk.Button.new()
+        icon_button.set_relief(Gtk.ReliefStyle.NONE)
+        icon_button.set_focus_on_click(False)
+        icon_button.add(self.icon)
+        #TODO write on_click function for icon selection
+        icon_button.connect("clicked", self.on_label_click)
+        icon_button.get_style_context().add_provider(provider, 600)
+        self.pack_start(icon_button, True, True, 0)
+
+        # label
+        self.label = Gtk.Label(label_text)
+        label_button = Gtk.Button.new()
+        label_button.set_relief(Gtk.ReliefStyle.NONE)
+        label_button.set_focus_on_click(False)
+        label_button.add(self.label)
+        #label_button.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        label_button.connect("clicked", self.on_label_click)
+        label_button.get_style_context().add_provider(provider, 600) 
+        self.pack_start(label_button, True, True, 0)
+        
+        # close button
+        close_button = Gtk.Button.new()
+        close_button.set_relief(Gtk.ReliefStyle.NONE)
+        close_button.set_focus_on_click(False)
+        close_button.add(Gtk.Image.new_from_stock(Gtk.STOCK_CLOSE, Gtk.IconSize.MENU))
+        close_button.connect("clicked", self.on_close_click)
         # 600 = GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
-        button.get_style_context().add_provider(provider, 600) 
-        self.pack_start(button, False, False, 0)
+        close_button.get_style_context().add_provider(provider, 600) 
+        self.pack_start(close_button, False, False, 0)
         
         self.show_all()
 
-    def button_pressed(self, button, event):
-        if event.type == Gdk.EventType._2BUTTON_PRESS:
-            self.emit("edit-drawer-name")
+    def on_label_click(self, button, data=None):
+        #if event.type == Gdk.EventType._2BUTTON_PRESS:
+        #    self.emit("edit-drawer-name")
+        self.emit("edit-drawer-name")
     
-    def button_clicked(self, button, data=None):
+    def on_close_click(self, button, data=None):
         self.emit("close-clicked")
 
     def getPixBuffFromFile(self, fileName):
